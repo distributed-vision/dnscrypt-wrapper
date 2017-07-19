@@ -1,0 +1,1 @@
+sudo dnscrypt-wrapper --resolver-address=8.8.8.8:53 --listen-address=0.0.0.0:5443  --provider-name=2.dnscrypt-cert.yechengfu.com                    --crypt-secretkey-file=1.key --provider-cert-file=1.cert -VVV

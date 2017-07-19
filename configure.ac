@@ -64,6 +64,12 @@ if test "$withval" != no; then
     )
 fi
 
+//libcurl
+AC_CHECK_LIB(curl,curl_easy_setopt,
+    [LIBS="-lcurl $LIBS"],
+    [AC_MSG_ERROR([libcurl is required - see ])]
+)
+
 # libsodium
 AC_ARG_WITH(sodium,
     [AS_HELP_STRING([--with-sodium=DIR], [where to find the sodium library])],

@@ -8,7 +8,7 @@ all::
 ### Defaults
 
 BASIC_CFLAGS = -std=c99 -Wall -I./argparse
-BASIC_LDFLAGS = -lm -lsodium
+BASIC_LDFLAGS = -lm -lsodium -lcurl
 
 # Guard against environment variables
 LIB_H = 

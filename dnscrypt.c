@@ -182,11 +182,24 @@ dnscrypt_pad(uint8_t *buf, const size_t len, const size_t max_len,
     return padded_len;
 }
 
+int convert_to_hex(char * dest, uint8_t bytes[])
+{
+    int i;
+    for (i = 0; i < 32; i++)
+    {
+        /* i use 5 here since we are going to add at most
+           3 chars, need a space for the end '\n' and need
+           a null terminator */
+        dest += sprintf(dest, "%02X", bytes[i]);
+
+    }
+    dest += snprintf(dest, 65, "");
+    return 0;
+}
 //  8 bytes: magic_query
 // 32 bytes: the client's DNSCurve public key (crypto_box_PUBLICKEYBYTES)
 // 12 bytes: a client-selected nonce (crypto_box_HALF_NONCEBYTES)
 // 16 bytes: Poly1305 MAC (crypto_box_MACBYTES)
-
 #define DNSCRYPT_QUERY_BOX_OFFSET \
     (DNSCRYPT_MAGIC_HEADER_LEN + crypto_box_PUBLICKEYBYTES + crypto_box_HALF_NONCEBYTES)
 
@@ -204,7 +217,46 @@ dnscrypt_server_uncurve(struct context *c, const dnsccert *cert,
 
     struct dnscrypt_query_header *query_header =
         (struct dnscrypt_query_header *)buf;
+
+    char buf2 [65];
+    convert_to_hex(buf2, query_header->publickey);
+    logger(LOG_DEBUG, "%s", buf2);
+
+    char url[255];
+    snprintf(url, 255, "http://192.168.2.37:9999/certificate/0x%s", buf2);
+    logger(LOG_DEBUG, "my url %s", url);
+    CURL *hnd = curl_easy_init()    ;
+    curl_easy_setopt(hnd, CURLOPT_CUSTOMREQUEST, "GET");
+    curl_easy_setopt(hnd, CURLOPT_URL, url);
+    struct curl_slist *headers = NULL;
+    curl_easy_setopt(hnd, CURLOPT_HTTPHEADER, headers);
+
+    CURLcode ret = curl_easy_perform(hnd);
+    logger(LOG_DEBUG, "ret code %d", ret);
+    long http_code = -1;
+    curl_easy_getinfo (hnd, CURLINFO_RESPONSE_CODE, &http_code);
+    curl_easy_cleanup(hnd);
+
     memcpy(nmkey, query_header->publickey, crypto_box_PUBLICKEYBYTES);
+    if (http_code == 200)
+    {
+             //Succeeded
+             logger(LOG_DEBUG, "Good");
+    }
+    else
+    {
+        logger(LOG_DEBUG, "Certificate not found on server %d", http_code);
+        return -1;
+    }
+
+/* TODO use some in-memory buffer to make memcmp with it
+    if ( memcmp ( buffer1, query_header->publickey, sizeof(buffer1) )) {
+        logger(LOG_DEBUG, "Does not Match");
+        return -1;
+    } else {
+        logger(LOG_DEBUG, "Match");
+    }
+*/
     if (XCHACHA20_CERT(cert)) {
 #ifdef HAVE_CRYPTO_BOX_CURVE25519XCHACHA20POLY1305_OPEN_EASY
         if (crypto_box_curve25519xchacha20poly1305_beforenm(nmkey, nmkey,
@@ -316,6 +368,12 @@ dnscrypt_server_curve(struct context *c, const dnsccert *cert,
                                     len, nonce, nmkey) != 0) {
             return -1;
         }
+    }
+
+//KeyCheck: added logging
+    if (1) {
+
+            logger(LOG_DEBUG, "Respond with client key received over UDP %d %d %dz`",  nmkey[0], nmkey[1], nmkey[2]);
     }
 
     memcpy(buf, DNSCRYPT_MAGIC_RESPONSE, DNSCRYPT_MAGIC_HEADER_LEN);

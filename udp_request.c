@@ -310,6 +310,7 @@ client_to_proxy_cb(evutil_socket_t client_proxy_handle, short ev_flags,
     struct dnscrypt_query_header *dnscrypt_header =
         (struct dnscrypt_query_header *)dns_query;
     debug_assert(sizeof c->keypairs[0].crypt_publickey >= DNSCRYPT_MAGIC_HEADER_LEN);
+    // Cert info
     if ((udp_request->cert =
          find_cert(c, dnscrypt_header->magic_query, dns_query_len)) == NULL) {
         udp_request->is_dnscrypted = false;
@@ -324,6 +325,7 @@ client_to_proxy_cb(evutil_socket_t client_proxy_handle, short ev_flags,
         }
         udp_request->is_dnscrypted = true;
     }
+           // logger(LOG_DEBUG, "Respond with client key received over UDP %d %d %dz`",  udp_request->cert->keypair->crypt_publickey[0], udp_request->cert->keypair->crypt_publickey[1], udp_request->cert->keypair->crypt_publickey[2]);
 
     struct dns_header *header = (struct dns_header *)dns_query;
 
