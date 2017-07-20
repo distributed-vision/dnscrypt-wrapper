@@ -148,6 +148,7 @@ struct context {
     char *provider_publickey_file;
     char *provider_secretkey_file;
     char *provider_cert_file;
+    char *rest_api;
     struct SignedCert *signed_certs;
     size_t signed_certs_count;
     dnsccert *certs;

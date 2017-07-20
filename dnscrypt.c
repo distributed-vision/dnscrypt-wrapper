@@ -223,7 +223,13 @@ dnscrypt_server_uncurve(struct context *c, const dnsccert *cert,
     logger(LOG_DEBUG, "%s", buf2);
 
     char url[255];
-    snprintf(url, 255, "http://192.168.2.37:9999/certificate/0x%s", buf2);
+    char host[255];
+    if (strlen(c->rest_api)) {
+        strncpy(host, c->rest_api, 255);
+    } else {
+        strcpy(host, "http://192.168.2.37:9999");
+    }
+    snprintf(url, 255, "%s/certificate/0x%s", host, buf2);
     logger(LOG_DEBUG, "my url %s", url);
     CURL *hnd = curl_easy_init()    ;
     curl_easy_setopt(hnd, CURLOPT_CUSTOMREQUEST, "GET");
@@ -232,6 +238,10 @@ dnscrypt_server_uncurve(struct context *c, const dnsccert *cert,
     curl_easy_setopt(hnd, CURLOPT_HTTPHEADER, headers);
 
     CURLcode ret = curl_easy_perform(hnd);
+    if (ret != 0 )
+    {
+        logger(LOG_DEBUG, "ret code %d : %s", ret, curl_easy_strerror(ret));
+    }
     logger(LOG_DEBUG, "ret code %d", ret);
     long http_code = -1;
     curl_easy_getinfo (hnd, CURLINFO_RESPONSE_CODE, &http_code);
